@@ -8,6 +8,14 @@
         <input v-model="form.name" placeholder="Ürün adını girin" />
       </div>
       <div class="form-group">
+        <label>Alış Fiyatı (TL)</label>
+        <input v-model.number="form.purchase_price" type="number" placeholder="0.00" min="0" step="0.01" />
+      </div>
+      <div class="form-group">
+        <label>Satış Fiyatı (TL)</label>
+        <input v-model.number="form.selling_price" type="number" placeholder="0.00" min="0" step="0.01" />
+      </div>
+      <div class="form-group">
         <label>Açıklama</label>
         <input v-model="form.description" placeholder="Kısa açıklama" />
       </div>
@@ -31,22 +39,37 @@
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import AppLayout from '../components/AppLayout.vue';
-import api from '../api';
 import { useToastStore } from '../stores/toast';
+import api from '../api';
 
-const toast = useToastStore();
 const router = useRouter();
 const route = useRoute();
 const isEdit = !!route.params.id;
 const error = ref('');
-const form = ref({ name: '', description: '', quantity: 0, category: '' });
+const toast = useToastStore();
+
+const form = ref({
+  name: '',
+  description: '',
+  quantity: 0,
+  category: '',
+  purchase_price: 0,
+  selling_price: 0
+});
 
 onMounted(async () => {
   if (isEdit) {
     try {
       const res = await api.get('/products');
       const product = res.data.find((p: any) => p.id === Number(route.params.id));
-      if (product) form.value = { ...product };
+      if (product) form.value = {
+        name: product.name,
+        description: product.description || '',
+        quantity: product.quantity,
+        category: product.category,
+        purchase_price: parseFloat(product.purchase_price) || 0,
+        selling_price: parseFloat(product.selling_price) || 0
+      };
     } catch { error.value = 'Ürün yüklenemedi'; }
   }
 });

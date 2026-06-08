@@ -86,24 +86,52 @@ router.patch('/:id/complete', async (req: AuthRequest, res: Response) => {
     const o = order.rows[0];
     const change = o.type === 'incoming' ? o.quantity : -o.quantity;
 
+    const product = await pool.query(
+      'SELECT * FROM products WHERE id = $1',
+      [o.product_id]
+    );
+    const p = product.rows[0];
+
+    // Stok güncelle
     await pool.query(
-      `UPDATE products SET quantity = GREATEST(0, quantity + $1) WHERE id = $2`,
+      'UPDATE products SET quantity = GREATEST(0, quantity + $1) WHERE id = $2',
       [change, o.product_id]
     );
 
+    // Stok hareketi kaydet
     await pool.query(
       `INSERT INTO stock_movements (product_id, user_id, change, quantity_after, note)
        SELECT $1, $2, $3, quantity, $4 FROM products WHERE id = $1`,
       [o.product_id, req.userId, change, `Sipariş #${id} tamamlandı`]
     );
 
+    // Alış mı satış mı — fiyatı ona göre belirle
+    const amount = o.type === 'outgoing'
+      ? p.selling_price * o.quantity
+      : p.purchase_price * o.quantity;
+
+    const transactionType = o.type === 'outgoing' ? 'income' : 'expense';
+
+    const description = o.type === 'outgoing'
+      ? `${p.name} satışı — ${o.quantity} adet x ${p.selling_price} TL`
+      : `${p.name} alımı — ${o.quantity} adet x ${p.purchase_price} TL`;
+
+    // Finansal işlem kaydet
+    await pool.query(
+      `INSERT INTO transactions (order_id, user_id, type, amount, description)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [id, req.userId, transactionType, amount, description]
+    );
+
+    // Siparişi tamamla
     const result = await pool.query(
       `UPDATE orders SET status = 'completed' WHERE id = $1 RETURNING *`,
       [id]
     );
 
-    res.json(result.rows[0]);
-  } catch {
+    res.json({ ...result.rows[0], amount, transactionType });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Sunucu hatası' });
   }
 });

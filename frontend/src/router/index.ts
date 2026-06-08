@@ -12,6 +12,7 @@ const router = createRouter({
   { path: '/products/:id/movements', component: () => import('../views/StockMovementsView.vue'), meta: { requiresAuth: true } },
   { path: '/products/:id/edit', component: () => import('../views/ProductFormView.vue'), meta: { requiresAuth: true } },
   { path: '/orders', component: () => import('../views/OrdersView.vue'), meta: { requiresAuth: true } },
+  { path: '/transactions', component: () => import('../views/TransactionsView.vue'), meta: { requiresAuth: true } },
 ],
 });
 

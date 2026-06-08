@@ -34,6 +34,9 @@
           </div>
           <span class="category-tag">{{ product.category }}</span>
         </div>
+        <div style="font-size:11px;color:#9ca3af">
+  {{ formatDate(product.created_at) }}
+</div>
 
         <div class="stock-row">
           <span class="stock-label">Stok</span>
@@ -95,6 +98,13 @@ const productClass = (p: any) => {
   if (p.quantity === 0) return 'out-of-stock';
   if (p.quantity <= 5) return 'low-stock';
   return '';
+};
+const formatDate = (dateStr: string) => {
+  return new Date(dateStr).toLocaleDateString('tr-TR', {
+    day: '2-digit',
+    month: '2-digit', 
+    year: 'numeric'
+  });
 };
 
 const stockBarClass = (p: any) => {

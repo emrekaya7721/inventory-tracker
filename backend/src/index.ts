@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/auth';
 import productRoutes from './routes/products';
+import orderRoutes from './routes/orders';
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ const authLimiter = rateLimit({
 app.use(limiter);
 app.use('/auth', authLimiter, authRoutes);
 app.use('/products', productRoutes);
+app.use('/orders', orderRoutes);
 
 app.get('/healthz', (req, res) => {
   res.json({ status: 'ok' });

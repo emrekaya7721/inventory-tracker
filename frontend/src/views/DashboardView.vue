@@ -162,7 +162,7 @@ onMounted(async () => {
     api.get('/orders'),
     api.get('/transactions')
   ]);
-  products.value = prodRes.data;
+  products.value = prodRes.data.products;
   orders.value = orderRes.data;
   financial.value = txRes.data.summary;
 });

@@ -71,9 +71,10 @@ router.post('/login', async (req: Request, res: Response) => {
     );
 
     res.json({ token });
-  } catch {
-    res.status(500).json({ error: 'Sunucu hatası' });
-  }
+  } catch (err) {
+  console.error(err);
+  res.status(500).json({ error: 'Sunucu hatası' });
+}
 });
 
 export default router;

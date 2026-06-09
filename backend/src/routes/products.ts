@@ -46,12 +46,34 @@ router.get('/:id/movements', async (req: AuthRequest, res: Response) => {
 
 // Tüm ürünleri listele
 router.get('/', async (req: AuthRequest, res: Response) => {
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 9;
+  const offset = (page - 1) * limit;
+
   try {
-    const result = await pool.query(
-      'SELECT * FROM products WHERE user_id = $1 ORDER BY created_at DESC',
+    const countResult = await pool.query(
+      'SELECT COUNT(*) FROM products WHERE user_id = $1',
       [req.userId]
     );
-    res.json(result.rows);
+    const total = parseInt(countResult.rows[0].count);
+    const totalPages = Math.ceil(total / limit);
+
+    const result = await pool.query(
+      'SELECT * FROM products WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3',
+      [req.userId, limit, offset]
+    );
+
+    res.json({
+      products: result.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    });
   } catch {
     res.status(500).json({ error: 'Sunucu hatası' });
   }

@@ -15,6 +15,10 @@
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
   Siparişler
 </router-link>
+<router-link to="/charts" class="nav-item" :class="{ active: route.path === '/charts' }">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+  Grafikler
+</router-link>
         <router-link to="/" class="nav-item" :class="{ active: route.path === '/' }">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
           Dashboard
@@ -73,6 +77,7 @@ const pageTitle = computed(() => {
   if (route.path.includes('edit')) return 'Ürünü Düzenle';
   if (route.path === '/orders') return 'Siparişler';
   if (route.path === '/transactions') return 'Finans';
+  if (route.path === '/charts') return 'Grafikler';
   return 'Inventory';
 });
 

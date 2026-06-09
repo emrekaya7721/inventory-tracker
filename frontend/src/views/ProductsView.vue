@@ -14,8 +14,57 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input v-model="search" placeholder="Ürün ara..." @input="currentPage = 1" />
         </div>
+        <button class="btn btn-secondary" @click="exportToExcel" style="font-size:13px">📥 Excel'e Aktar</button>
+        <button class="btn btn-secondary" @click="showMailModal = true" style="font-size:13px">
+  📧 Stok Uyarısı Gönder
+</button>
         <router-link to="/products/new" class="btn btn-primary">+ Yeni Ürün</router-link>
       </div>
+    </div>
+
+    <!-- Gelişmiş Filtreler -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:0.75rem;align-items:center">
+      <select v-model="stockFilter" style="font-size:12px;padding:6px 10px;border:1px solid #ebebeb;border-radius:8px;outline:none">
+        <option value="">Tüm Stok Durumları</option>
+        <option value="normal">Normal Stok</option>
+        <option value="low">Kritik Stok</option>
+        <option value="empty">Tükendi</option>
+      </select>
+
+      <select v-model="sortBy" style="font-size:12px;padding:6px 10px;border:1px solid #ebebeb;border-radius:8px;outline:none">
+        <option value="newest">En Yeni</option>
+        <option value="oldest">En Eski</option>
+        <option value="stock_high">Stok: Yüksekten Düşüğe</option>
+        <option value="stock_low">Stok: Düşükten Yükseğe</option>
+        <option value="price_high">Fiyat: Yüksekten Düşüğe</option>
+        <option value="price_low">Fiyat: Düşükten Yükseğe</option>
+      </select>
+
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#6b7280">
+        <span>Fiyat:</span>
+        <input
+          v-model.number="minPrice"
+          type="number"
+          placeholder="Min"
+          min="0"
+          style="width:70px;font-size:12px;padding:5px 8px;border:1px solid #ebebeb;border-radius:8px;outline:none"
+        />
+        <span>—</span>
+        <input
+          v-model.number="maxPrice"
+          type="number"
+          placeholder="Max"
+          min="0"
+          style="width:70px;font-size:12px;padding:5px 8px;border:1px solid #ebebeb;border-radius:8px;outline:none"
+        />
+      </div>
+
+      <button
+        v-if="hasActiveFilters"
+        class="btn btn-secondary"
+        style="font-size:12px;padding:5px 10px"
+        @click="clearFilters"
+      >✕ Filtreleri Temizle</button>
     </div>
 
     <div v-if="error" class="error-msg">{{ error }}</div>
@@ -116,6 +165,22 @@
       Toplam {{ pagination.total }} ürün — Sayfa {{ currentPage }} / {{ pagination.totalPages }}
     </div>
   </AppLayout>
+  <!-- Mail Modal -->
+<div v-if="showMailModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:100">
+  <div style="background:white;border-radius:12px;padding:1.5rem;width:380px;display:flex;flex-direction:column;gap:1rem">
+    <h3 style="font-size:15px;font-weight:600;color:#1a1a2e">📧 Kritik Stok Uyarısı Gönder</h3>
+    <p style="font-size:13px;color:#6b7280">Stoku 5 ve altında olan ürünlerin listesi belirtilen mail adresine gönderilecek.</p>
+    <div class="form-group">
+      <label>Mail Adresi</label>
+      <input v-model="mailEmail" type="email" placeholder="ornek@gmail.com" />
+    </div>
+    <div v-if="mailError" class="error-msg">{{ mailError }}</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" @click="sendLowStockMail">Gönder</button>
+      <button class="btn btn-secondary" @click="showMailModal = false; mailEmail = ''; mailError = ''">İptal</button>
+    </div>
+  </div>
+</div>
 </template>
 
 <script setup lang="ts">
@@ -123,7 +188,12 @@ import { ref, computed, onMounted, watch } from 'vue';
 import AppLayout from '../components/AppLayout.vue';
 import { useToastStore } from '../stores/toast';
 import api from '../api';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
+const showMailModal = ref(false);
+const mailEmail = ref('');
+const mailError = ref('');
 const products = ref<any[]>([]);
 const error = ref('');
 const selectedCategory = ref('');
@@ -134,13 +204,73 @@ const pagination = ref({
   page: 1, limit: 9, total: 0, totalPages: 1, hasNext: false, hasPrev: false
 });
 
+const stockFilter = ref('');
+const sortBy = ref('newest');
+const minPrice = ref<number | ''>('');
+const maxPrice = ref<number | ''>('');
+
+const hasActiveFilters = computed(() =>
+  stockFilter.value !== '' ||
+  sortBy.value !== 'newest' ||
+  minPrice.value !== '' ||
+  maxPrice.value !== ''
+);
+
+const clearFilters = () => {
+  stockFilter.value = '';
+  sortBy.value = 'newest';
+  minPrice.value = '';
+  maxPrice.value = '';
+  selectedCategory.value = '';
+  search.value = '';
+};
+const sendLowStockMail = async () => {
+  mailError.value = '';
+  if (!mailEmail.value) {
+    mailError.value = 'Mail adresi gerekli';
+    return;
+  }
+  try {
+    await api.post('/mail/low-stock', { email: mailEmail.value });
+    showMailModal.value = false;
+    mailEmail.value = '';
+    toast.show('Mail kuyruğa eklendi, kısa süre içinde gönderilecek');
+  } catch (e: any) {
+    mailError.value = e.response?.data?.error || 'Mail gönderilemedi';
+  }
+};
+
 const categories = computed(() => [...new Set(products.value.map(p => p.category))]);
 
-const filteredProducts = computed(() =>
-  products.value
+const filteredProducts = computed(() => {
+  let result = products.value
     .filter(p => !selectedCategory.value || p.category === selectedCategory.value)
     .filter(p => !search.value || p.name.toLowerCase().includes(search.value.toLowerCase()))
-);
+    .filter(p => {
+      if (stockFilter.value === 'normal') return p.quantity > 5;
+      if (stockFilter.value === 'low') return p.quantity > 0 && p.quantity <= 5;
+      if (stockFilter.value === 'empty') return p.quantity === 0;
+      return true;
+    })
+    .filter(p => {
+      const price = parseFloat(p.selling_price);
+      if (minPrice.value !== '' && price < minPrice.value) return false;
+      if (maxPrice.value !== '' && price > maxPrice.value) return false;
+      return true;
+    });
+
+  result = [...result].sort((a, b) => {
+    if (sortBy.value === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    if (sortBy.value === 'oldest') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    if (sortBy.value === 'stock_high') return b.quantity - a.quantity;
+    if (sortBy.value === 'stock_low') return a.quantity - b.quantity;
+    if (sortBy.value === 'price_high') return parseFloat(b.selling_price) - parseFloat(a.selling_price);
+    if (sortBy.value === 'price_low') return parseFloat(a.selling_price) - parseFloat(b.selling_price);
+    return 0;
+  });
+
+  return result;
+});
 
 const pageNumbers = computed(() => {
   const pages = [];
@@ -197,7 +327,6 @@ const changePage = (page: number) => {
 };
 
 watch(currentPage, () => loadProducts());
-
 onMounted(() => loadProducts());
 
 const handleDelete = async (id: number) => {
@@ -216,5 +345,39 @@ const updateStock = async (id: number, change: number) => {
     if (index !== -1) products.value[index] = res.data;
     toast.show(change > 0 ? 'Stok artırıldı' : 'Stok azaltıldı');
   } catch { toast.show('Stok güncellenemedi', 'error'); }
+};
+
+const exportToExcel = () => {
+  const data = products.value.map(p => ({
+    'Ürün Adı': p.name,
+    'Açıklama': p.description || '',
+    'Kategori': p.category,
+    'Stok': p.quantity,
+    'Alış Fiyatı': parseFloat(p.purchase_price),
+    'Satış Fiyatı': parseFloat(p.selling_price),
+    'Kar': parseFloat(p.selling_price) - parseFloat(p.purchase_price),
+    'Durum': p.quantity === 0 ? 'Tükendi' : p.quantity <= 5 ? 'Kritik' : 'Normal',
+    'Eklenme Tarihi': new Date(p.created_at).toLocaleDateString('tr-TR'),
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Ürünler');
+
+  ws['!cols'] = [
+    { wch: 20 },
+    { wch: 25 },
+    { wch: 15 },
+    { wch: 8 },
+    { wch: 15 },
+    { wch: 15 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 15 },
+  ];
+
+  const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+  saveAs(blob, `urunler_${new Date().toLocaleDateString('tr-TR').replace(/\./g, '-')}.xlsx`);
 };
 </script>

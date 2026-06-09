@@ -13,6 +13,7 @@ const router = createRouter({
   { path: '/products/:id/edit', component: () => import('../views/ProductFormView.vue'), meta: { requiresAuth: true } },
   { path: '/orders', component: () => import('../views/OrdersView.vue'), meta: { requiresAuth: true } },
   { path: '/transactions', component: () => import('../views/TransactionsView.vue'), meta: { requiresAuth: true } },
+  { path: '/charts', component: () => import('../views/ChartsView.vue'), meta: { requiresAuth: true } },
 ],
 });
 

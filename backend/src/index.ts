@@ -6,6 +6,7 @@ import authRoutes from './routes/auth';
 import productRoutes from './routes/products';
 import orderRoutes from './routes/orders';
 import transactionRoutes from './routes/transactions';
+import mailRoutes from './routes/mail';
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use('/auth', authLimiter, authRoutes);
 app.use('/products', productRoutes);
 app.use('/orders', orderRoutes);
 app.use('/transactions', transactionRoutes);
+app.use('/mail', mailRoutes);
 
 app.get('/healthz', (req, res) => {
   res.json({ status: 'ok' });

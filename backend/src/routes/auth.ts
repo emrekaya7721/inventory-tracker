@@ -8,7 +8,8 @@ const router = Router();
 
 const authSchema = z.object({
   username: z.string().min(3, 'Kullanıcı adı en az 3 karakter olmalı').max(50),
-  password: z.string().min(4, 'Şifre en az 6 karakter olmalı'),
+  password: z.string().min(4, 'Şifre en az 4 karakter olmalı'),
+  email: z.string().email('Geçerli bir email adresi girin').optional(),
 });
 
 router.post('/register', async (req: Request, res: Response) => {
@@ -17,7 +18,7 @@ router.post('/register', async (req: Request, res: Response) => {
     return res.status(400).json({ error: parsed.error.issues[0].message });
   }
 
-  const { username, password } = parsed.data;
+  const { username, password, email } = parsed.data;
 
   try {
     const existing = await pool.query('SELECT id FROM users WHERE username = $1', [username]);
@@ -26,11 +27,10 @@ router.post('/register', async (req: Request, res: Response) => {
     }
 
     const hashed = await bcrypt.hash(password, 10);
-    const result = await pool.query(
-      'INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id',
-      [username, hashed]
-    );
-
+const result = await pool.query(
+  'INSERT INTO users (username, password, email) VALUES ($1, $2, $3) RETURNING id',
+  [username, hashed, email || null]
+);
     const token = jwt.sign(
       { userId: result.rows[0].id },
       process.env.JWT_SECRET as string,
@@ -67,7 +67,7 @@ router.post('/login', async (req: Request, res: Response) => {
     const token = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET as string,
-      { expiresIn: '7d' }
+      { expiresIn: '1h' }
     );
 
     res.json({ token });

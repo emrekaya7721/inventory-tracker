@@ -18,6 +18,10 @@
         <label>Şifre</label>
         <input v-model="password" type="password" placeholder="••••••••" @keyup.enter="handleRegister" />
       </div>
+      <div class="form-group">
+  <label>Email (opsiyonel — stok uyarıları için)</label>
+  <input v-model="email" type="email" placeholder="ornek@gmail.com" />
+</div>
       <button class="btn btn-primary btn-full" @click="handleRegister">Kayıt Ol</button>
       <p style="text-align:center;font-size:13px;color:#6b7280">
         Hesabın var mı? <router-link to="/login" style="color:#534AB7;font-weight:500">Giriş Yap</router-link>
@@ -31,6 +35,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 
+const email = ref('');
 const username = ref('');
 const password = ref('');
 const error = ref('');
@@ -41,7 +46,7 @@ const handleRegister = async () => {
   error.value = '';
   if (!username.value || !password.value) { error.value = 'Tüm alanları doldurun'; return; }
   try {
-    await authStore.register(username.value, password.value);
+    await authStore.register(username.value, password.value, email.value);
     router.push('/');
   } catch (e: any) {
     error.value = e.response?.data?.error || 'Bir hata oluştu';

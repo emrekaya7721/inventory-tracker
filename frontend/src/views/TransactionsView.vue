@@ -24,10 +24,8 @@
 
     <div style="background:white;border:1px solid #ebebeb;border-radius:12px;padding:1.25rem">
       <div class="section-title" style="margin-bottom:1rem">İşlem Geçmişi</div>
-      <button class="btn btn-secondary" @click="exportToExcel" style="font-size:13px">
-  📥 Excel'e Aktar
-</button>
-
+      <<button class="btn btn-secondary" @click="downloadFile('pdf')" style="font-size:13px">📄 PDF İndir</button>
+<button class="btn btn-secondary" @click="downloadFile('excel')" style="font-size:13px">📥 Excel İndir</button>
       <div v-if="error" class="error-msg">{{ error }}</div>
       <div v-if="transactions.length === 0 && !error" class="empty-state">
         Henüz işlem yok. Sipariş tamamlayınca burada görünür.
@@ -78,9 +76,9 @@
 import { ref, onMounted } from 'vue';
 import AppLayout from '../components/AppLayout.vue';
 import api from '../api';
-import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
+import { useToastStore } from '../stores/toast';
 
+const toast = useToastStore();
 const transactions = ref<any[]>([]);
 const summary = ref({ total_income: 0, total_expense: 0, net: 0 });
 const error = ref('');
@@ -101,34 +99,20 @@ const formatMoney = (amount: number) => {
     currency: 'TRY'
   }).format(amount);
 };
-const exportToExcel = () => {
-  const data = transactions.value.map(tx => ({
-    'Tarih': new Date(tx.created_at).toLocaleDateString('tr-TR'),
-    'Tür': tx.type === 'income' ? 'Gelir' : 'Gider',
-    'Tutar': parseFloat(tx.amount),
-    'Açıklama': tx.description || '',
-  }));
-
-  // Özet satırı ekle
-  data.push({} as any);
-  data.push({ 'Açıklama': 'TOPLAM GELİR', 'Tutar': summary.value.total_income } as any);
-  data.push({ 'Açıklama': 'TOPLAM GİDER', 'Tutar': summary.value.total_expense } as any);
-  data.push({ 'Açıklama': 'NET KAR', 'Tutar': summary.value.net } as any);
-
-  const ws = XLSX.utils.json_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Finans');
-
-  ws['!cols'] = [
-    { wch: 15 },
-    { wch: 10 },
-    { wch: 15 },
-    { wch: 40 },
-  ];
-
-  const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-  const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
-  saveAs(blob, `finans_${new Date().toLocaleDateString('tr-TR').replace(/\./g, '-')}.xlsx`);
+const downloadFile = async (type: 'pdf' | 'excel') => {
+  try {
+    const res = await api.get(`/files/transactions/${type === 'pdf' ? 'pdf' : 'excel'}`, { responseType: 'blob' });
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `finans.${type === 'pdf' ? 'pdf' : 'xlsx'}`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    toast.show(`${type === 'pdf' ? 'PDF' : 'Excel'} indiriliyor...`);
+  } catch {
+    toast.show('Dosya indirilemedi', 'error');
+  }
 };
 
 const formatDate = (dateStr: string) => {

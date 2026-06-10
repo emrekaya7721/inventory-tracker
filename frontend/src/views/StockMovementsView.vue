@@ -80,7 +80,7 @@ onMounted(async () => {
       api.get('/products')
     ]);
     movements.value = movRes.data;
-    const product = prodRes.data.find((p: any) => p.id === Number(route.params.id));
+    const product = prodRes.data.products.find((p: any) => p.id === Number(route.params.id));
     if (product) {
       productName.value = product.name;
       currentStock.value = product.quantity;

@@ -61,7 +61,7 @@ onMounted(async () => {
   if (isEdit) {
     try {
       const res = await api.get('/products');
-      const product = res.data.find((p: any) => p.id === Number(route.params.id));
+      const product = res.data.products.find((p: any) => p.id === Number(route.params.id));
       if (product) form.value = {
         name: product.name,
         description: product.description || '',

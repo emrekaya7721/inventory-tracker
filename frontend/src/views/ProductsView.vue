@@ -14,7 +14,8 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input v-model="search" placeholder="Ürün ara..." @input="currentPage = 1" />
         </div>
-        <button class="btn btn-secondary" @click="exportToExcel" style="font-size:13px">📥 Excel'e Aktar</button>
+        <button class="btn btn-secondary" @click="downloadFile('pdf')" style="font-size:13px">📄 PDF İndir</button>
+<button class="btn btn-secondary" @click="downloadFile('excel')" style="font-size:13px">📥 Excel İndir</button>
         <button class="btn btn-secondary" @click="showMailModal = true" style="font-size:13px">
   📧 Stok Uyarısı Gönder
 </button>
@@ -188,8 +189,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import AppLayout from '../components/AppLayout.vue';
 import { useToastStore } from '../stores/toast';
 import api from '../api';
-import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
+
 
 const showMailModal = ref(false);
 const mailEmail = ref('');
@@ -216,6 +216,21 @@ const hasActiveFilters = computed(() =>
   maxPrice.value !== ''
 );
 
+const downloadFile = async (type: 'pdf' | 'excel') => {
+  try {
+    const res = await api.get(`/files/products/${type}`, { responseType: 'blob' });
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `urunler.${type === 'pdf' ? 'pdf' : 'xlsx'}`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    toast.show(`${type === 'pdf' ? 'PDF' : 'Excel'} indiriliyor...`);
+  } catch {
+    toast.show('Dosya indirilemedi', 'error');
+  }
+};
 const clearFilters = () => {
   stockFilter.value = '';
   sortBy.value = 'newest';
@@ -345,39 +360,5 @@ const updateStock = async (id: number, change: number) => {
     if (index !== -1) products.value[index] = res.data;
     toast.show(change > 0 ? 'Stok artırıldı' : 'Stok azaltıldı');
   } catch { toast.show('Stok güncellenemedi', 'error'); }
-};
-
-const exportToExcel = () => {
-  const data = products.value.map(p => ({
-    'Ürün Adı': p.name,
-    'Açıklama': p.description || '',
-    'Kategori': p.category,
-    'Stok': p.quantity,
-    'Alış Fiyatı': parseFloat(p.purchase_price),
-    'Satış Fiyatı': parseFloat(p.selling_price),
-    'Kar': parseFloat(p.selling_price) - parseFloat(p.purchase_price),
-    'Durum': p.quantity === 0 ? 'Tükendi' : p.quantity <= 5 ? 'Kritik' : 'Normal',
-    'Eklenme Tarihi': new Date(p.created_at).toLocaleDateString('tr-TR'),
-  }));
-
-  const ws = XLSX.utils.json_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Ürünler');
-
-  ws['!cols'] = [
-    { wch: 20 },
-    { wch: 25 },
-    { wch: 15 },
-    { wch: 8 },
-    { wch: 15 },
-    { wch: 15 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 15 },
-  ];
-
-  const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-  const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
-  saveAs(blob, `urunler_${new Date().toLocaleDateString('tr-TR').replace(/\./g, '-')}.xlsx`);
 };
 </script>

@@ -147,7 +147,7 @@ onMounted(async () => {
       api.get('/products')
     ]);
     orders.value = ordersRes.data;
-    products.value = productsRes.data;
+    products.value = productsRes.data.products;
   } catch {
     error.value = 'Veriler yüklenemedi';
   }

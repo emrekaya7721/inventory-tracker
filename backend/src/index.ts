@@ -7,6 +7,9 @@ import productRoutes from './routes/products';
 import orderRoutes from './routes/orders';
 import transactionRoutes from './routes/transactions';
 import mailRoutes from './routes/mail';
+import fileRoutes from './routes/files';
+import morgan from 'morgan';
+import profileRoutes from './routes/profile';
 
 dotenv.config();
 
@@ -14,6 +17,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
+app.use(morgan('dev'));
 app.use(express.json());
 
 // Rate limiting
@@ -35,6 +39,9 @@ app.use('/products', productRoutes);
 app.use('/orders', orderRoutes);
 app.use('/transactions', transactionRoutes);
 app.use('/mail', mailRoutes);
+app.use('/files', fileRoutes);
+app.use('/profile', profileRoutes);
+
 
 app.get('/healthz', (req, res) => {
   res.json({ status: 'ok' });

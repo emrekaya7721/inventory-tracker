@@ -1,4 +1,16 @@
 services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - frontend
+      - backend
+
   postgres:
     image: postgres:16-alpine
     environment:
@@ -52,6 +64,13 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+  file-service:
+    build: ./file-service
+    ports:
+      - "4000:4000"
+    depends_on:
+      - backend
 
   frontend:
     build: ./frontend

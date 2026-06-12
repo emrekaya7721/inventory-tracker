@@ -6,11 +6,10 @@ import pool from '../db';
 const router = Router();
 router.use(authenticate);
 
-// Kritik stok mail gönder
 router.post('/low-stock', async (req: AuthRequest, res: Response) => {
   try {
     const userResult = await pool.query(
-      'SELECT id, username FROM users WHERE id = $1',
+      'SELECT id, username, email FROM users WHERE id = $1',
       [req.userId]
     );
 
@@ -19,18 +18,16 @@ router.post('/low-stock', async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
     }
 
-    const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ error: 'Email adresi gerekli' });
+    if (!user.email) {
+      return res.status(400).json({ error: 'Mail göndermek için önce profil sayfasından email adresinizi ekleyin' });
     }
 
-    // Kuyruğa iş ekle
     await lowStockQueue.add({
       userId: req.userId,
-      userEmail: email,
+      userEmail: user.email,
     });
 
-    res.json({ message: 'Mail kuyruğa eklendi, kısa süre içinde gönderilecek' });
+    res.json({ message: `Mail ${user.email} adresine gönderilecek` });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Sunucu hatası' });

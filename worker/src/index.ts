@@ -3,6 +3,8 @@ import { Pool } from 'pg';
 import cron from 'node-cron';
 import { lowStockQueue } from './queue';
 import { sendLowStockMail } from './mailer';
+import { importQueue } from './queue';
+import { processImportParse, processImportCommit } from './importProcessor';
 
 dotenv.config();
 
@@ -39,6 +41,13 @@ lowStockQueue.process(async (job) => {
     console.error('Worker hatası:', err);
     throw err;
   }
+});
+importQueue.process('parse', async (job) => {
+  await processImportParse(job);
+});
+
+importQueue.process('commit', async (job) => {
+  await processImportCommit(job);
 });
 
 // Her gün sabah 9'da çalışır

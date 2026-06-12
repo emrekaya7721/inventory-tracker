@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import pool from '../db';
 import { authenticate, AuthRequest } from '../middleware/auth';
+import { getIO } from '../socket';
 
 const router = Router();
 
@@ -16,7 +17,6 @@ const productSchema = z.object({
   selling_price: z.number().min(0, 'Satış fiyatı 0 veya daha fazla olmalı'),
 });
 
-// Stok geçmişi
 router.get('/:id/movements', async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
 
@@ -43,8 +43,6 @@ router.get('/:id/movements', async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: 'Sunucu hatası' });
   }
 });
-
-// Tüm ürünleri listele
 router.get('/', async (req: AuthRequest, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 9;
@@ -78,8 +76,6 @@ router.get('/', async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: 'Sunucu hatası' });
   }
 });
-
-// Ürün oluştur
 router.post('/', async (req: AuthRequest, res: Response) => {
   const parsed = productSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -93,13 +89,15 @@ router.post('/', async (req: AuthRequest, res: Response) => {
   'INSERT INTO products (name, description, quantity, category, purchase_price, selling_price, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
   [name, description, quantity, category, purchase_price, selling_price, req.userId]
 );
+getIO().to(`user:${req.userId}`).emit('product:created', result.rows[0]);
     res.status(201).json(result.rows[0]);
   } catch {
     res.status(500).json({ error: 'Sunucu hatası' });
   }
 });
 
-// Ürün güncelle
+
+
 router.put('/:id', async (req: AuthRequest, res: Response) => {
   const parsed = productSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -126,7 +124,6 @@ const { name, description, quantity, category, purchase_price, selling_price } =
   }
 });
 
-// Hızlı stok güncelleme
 router.patch('/:id/stock', async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { change, note } = req.body;
@@ -151,6 +148,14 @@ router.patch('/:id/stock', async (req: AuthRequest, res: Response) => {
        VALUES ($1, $2, $3, $4, $5)`,
       [id, req.userId, change, updated.quantity, note || null]
     );
+    // Realtime güncelleme gönder
+getIO().to(`user:${req.userId}`).emit('stock:updated', {
+  productId: updated.id,
+  quantity: updated.quantity,
+  name: updated.name,
+});
+    
+
 
     res.json(updated);
   } catch {
@@ -158,7 +163,6 @@ router.patch('/:id/stock', async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Ürün sil
 router.delete('/:id', async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
 
@@ -171,7 +175,7 @@ router.delete('/:id', async (req: AuthRequest, res: Response) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Ürün bulunamadı' });
     }
-
+  getIO().to(`user:${req.userId}`).emit('product:deleted', { id: Number(id) });
     res.json({ message: 'Ürün silindi' });
   } catch {
     res.status(500).json({ error: 'Sunucu hatası' });

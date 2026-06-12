@@ -44,6 +44,8 @@ services:
       - "3000:3000"
     env_file:
       - ./backend/.env
+    volumes:
+      - shared_uploads:/tmp/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -59,6 +61,8 @@ services:
     build: ./worker
     env_file:
       - ./worker/.env
+    volumes:
+      - shared_uploads:/tmp/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -81,3 +85,4 @@ services:
 
 volumes:
   postgres_data:
+  shared_uploads:

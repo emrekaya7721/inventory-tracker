@@ -14,6 +14,7 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input v-model="search" placeholder="Ürün ara..." @input="currentPage = 1" />
         </div>
+        <button class="btn btn-secondary" @click="downloadFile('csv')" style="font-size:13px">📄 CSV İndir</button>
         <button class="btn btn-secondary" @click="downloadFile('pdf')" style="font-size:13px">📄 PDF İndir</button>
 <button class="btn btn-secondary" @click="downloadFile('excel')" style="font-size:13px">📥 Excel İndir</button>
         <button class="btn btn-secondary" @click="showMailModal = true" style="font-size:13px">
@@ -167,18 +168,15 @@
     </div>
   </AppLayout>
   <!-- Mail Modal -->
+<!-- Mail Modal -->
 <div v-if="showMailModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:100">
   <div style="background:white;border-radius:12px;padding:1.5rem;width:380px;display:flex;flex-direction:column;gap:1rem">
     <h3 style="font-size:15px;font-weight:600;color:#1a1a2e">📧 Kritik Stok Uyarısı Gönder</h3>
-    <p style="font-size:13px;color:#6b7280">Stoku 5 ve altında olan ürünlerin listesi belirtilen mail adresine gönderilecek.</p>
-    <div class="form-group">
-      <label>Mail Adresi</label>
-      <input v-model="mailEmail" type="email" placeholder="ornek@gmail.com" />
-    </div>
+    <p style="font-size:13px;color:#6b7280">Stoku 5 ve altında olan ürünlerin listesi kayıtlı mail adresinize gönderilecek.</p>
     <div v-if="mailError" class="error-msg">{{ mailError }}</div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-primary" @click="sendLowStockMail">Gönder</button>
-      <button class="btn btn-secondary" @click="showMailModal = false; mailEmail = ''; mailError = ''">İptal</button>
+      <button class="btn btn-secondary" @click="showMailModal = false; mailError = ''">İptal</button>
     </div>
   </div>
 </div>
@@ -192,7 +190,6 @@ import api from '../api';
 
 
 const showMailModal = ref(false);
-const mailEmail = ref('');
 const mailError = ref('');
 const products = ref<any[]>([]);
 const error = ref('');
@@ -216,17 +213,18 @@ const hasActiveFilters = computed(() =>
   maxPrice.value !== ''
 );
 
-const downloadFile = async (type: 'pdf' | 'excel') => {
+const downloadFile = async (type: 'pdf' | 'excel' | 'csv') => {
   try {
     const res = await api.get(`/files/products/${type}`, { responseType: 'blob' });
     const url = window.URL.createObjectURL(new Blob([res.data]));
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `urunler.${type === 'pdf' ? 'pdf' : 'xlsx'}`);
+    const ext = type === 'pdf' ? 'pdf' : type === 'csv' ? 'csv' : 'xlsx';
+    link.setAttribute('download', `urunler.${ext}`);
     document.body.appendChild(link);
     link.click();
     link.remove();
-    toast.show(`${type === 'pdf' ? 'PDF' : 'Excel'} indiriliyor...`);
+    toast.show(`${type.toUpperCase()} indiriliyor...`);
   } catch {
     toast.show('Dosya indirilemedi', 'error');
   }
@@ -241,15 +239,10 @@ const clearFilters = () => {
 };
 const sendLowStockMail = async () => {
   mailError.value = '';
-  if (!mailEmail.value) {
-    mailError.value = 'Mail adresi gerekli';
-    return;
-  }
   try {
-    await api.post('/mail/low-stock', { email: mailEmail.value });
+    const res = await api.post('/mail/low-stock', {});
     showMailModal.value = false;
-    mailEmail.value = '';
-    toast.show('Mail kuyruğa eklendi, kısa süre içinde gönderilecek');
+    toast.show(res.data.message);
   } catch (e: any) {
     mailError.value = e.response?.data?.error || 'Mail gönderilemedi';
   }

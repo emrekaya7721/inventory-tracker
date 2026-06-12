@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import pool from '../db';
 import { authenticate, AuthRequest } from '../middleware/auth';
+import { getIO } from '../socket';
 
 const router = Router();
 router.use(authenticate);
@@ -11,6 +12,7 @@ const orderSchema = z.object({
   type: z.enum(['incoming', 'outgoing']),
   quantity: z.number().int().positive('Miktar 0\'dan büyük olmalı'),
   note: z.string().max(255).optional(),
+ 
 });
 
 // Siparişleri listele
@@ -66,7 +68,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 });
 
 // Sipariş tamamla
-router.patch('/:id/complete', async (req: AuthRequest, res: Response) => {
+router.patch('id/comple/:te', async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
 
   try {
@@ -128,7 +130,12 @@ router.patch('/:id/complete', async (req: AuthRequest, res: Response) => {
       `UPDATE orders SET status = 'completed' WHERE id = $1 RETURNING *`,
       [id]
     );
-
+   getIO().to(`user:${req.userId}`).emit('order:completed', {
+  orderId: id,
+  productId: o.product_id,
+  amount,
+  transactionType,
+});
     res.json({ ...result.rows[0], amount, transactionType });
   } catch (err) {
     console.error(err);

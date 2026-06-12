@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 
+
 const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -15,6 +16,7 @@ const router = createRouter({
   { path: '/transactions', component: () => import('../views/TransactionsView.vue'), meta: { requiresAuth: true } },
   { path: '/charts', component: () => import('../views/ChartsView.vue'), meta: { requiresAuth: true } },
   { path: '/profile', component: () => import('../views/ProfileView.vue'), meta: { requiresAuth: true } },
+  { path: '/import', component: () => import('../views/ImportView.vue'), meta: { requiresAuth: true } },
 ],
 });
 

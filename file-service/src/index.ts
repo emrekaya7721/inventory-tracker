@@ -108,6 +108,33 @@ app.post('/generate/excel', (req: Request, res: Response) => {
   res.setHeader('Content-Disposition', `attachment; filename="${title}.xlsx"`);
   res.send(buffer);
 });
+app.post('/generate/csv', (req: Request, res: Response) => {
+  const { title, headers, rows } = req.body;
+
+  if (!title || !headers || !rows) {
+    return res.status(400).json({ error: 'title, headers ve rows gerekli' });
+  }
+
+  // CSV satırlarını oluştur
+  const csvHeader = headers.join(',');
+  const csvRows = rows.map((row: any[]) =>
+    row.map(cell => {
+      const value = String(cell ?? '');
+      // Virgül veya tırnak içeriyorsa çift tırnak içine al
+      if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+        return `"${value.replace(/"/g, '""')}"`;
+      }
+      return value;
+    }).join(',')
+  );
+
+  const csv = [csvHeader, ...csvRows].join('\n');
+  const bom = '\uFEFF'; // Excel'de Türkçe karakterler için BOM
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${title}.csv"`);
+  res.send(bom + csv);
+});
 
 app.listen(PORT, () => {
   console.log(`File service running on port ${PORT}`);

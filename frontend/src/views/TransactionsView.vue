@@ -24,6 +24,7 @@
 
     <div style="background:white;border:1px solid #ebebeb;border-radius:12px;padding:1.25rem">
       <div class="section-title" style="margin-bottom:1rem">İşlem Geçmişi</div>
+      <button class="btn btn-secondary" @click="downloadFile('csv')" style="font-size:13px">📄 CSV İndir</button>
       <<button class="btn btn-secondary" @click="downloadFile('pdf')" style="font-size:13px">📄 PDF İndir</button>
 <button class="btn btn-secondary" @click="downloadFile('excel')" style="font-size:13px">📥 Excel İndir</button>
       <div v-if="error" class="error-msg">{{ error }}</div>
@@ -99,17 +100,18 @@ const formatMoney = (amount: number) => {
     currency: 'TRY'
   }).format(amount);
 };
-const downloadFile = async (type: 'pdf' | 'excel') => {
+const downloadFile = async (type: 'pdf' | 'excel' | 'csv') => {
   try {
-    const res = await api.get(`/files/transactions/${type === 'pdf' ? 'pdf' : 'excel'}`, { responseType: 'blob' });
+    const res = await api.get(`/files/products/${type}`, { responseType: 'blob' });
     const url = window.URL.createObjectURL(new Blob([res.data]));
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `finans.${type === 'pdf' ? 'pdf' : 'xlsx'}`);
+    const ext = type === 'pdf' ? 'pdf' : type === 'csv' ? 'csv' : 'xlsx';
+    link.setAttribute('download', `urunler.${ext}`);
     document.body.appendChild(link);
     link.click();
     link.remove();
-    toast.show(`${type === 'pdf' ? 'PDF' : 'Excel'} indiriliyor...`);
+    toast.show(`${type.toUpperCase()} indiriliyor...`);
   } catch {
     toast.show('Dosya indirilemedi', 'error');
   }

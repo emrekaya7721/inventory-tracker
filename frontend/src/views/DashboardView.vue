@@ -47,7 +47,7 @@
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.25rem">
       <!-- Kategori dağılımı -->
       <div style="background:white;border:1px solid #ebebeb;border-radius:12px;padding:1.25rem">
         <div class="section-title" style="margin-bottom:1rem">Kategoriye Göre Dağılım</div>
@@ -88,7 +88,7 @@
     </div>
 
     <!-- Kritik stok -->
-    <div v-if="stats.lowStockProducts.length > 0">
+    <div v-if="stats.lowStockProducts.length > 0" style="margin-top:1.25rem">
       <div class="section-header" style="margin-bottom:0.75rem">
         <div class="section-title">⚠️ Kritik Stok Ürünleri</div>
       </div>
@@ -117,13 +117,48 @@
         </div>
       </div>
     </div>
+
+    <!-- Job İstatistikleri -->
+    <div style="background:white;border:1px solid #ebebeb;border-radius:12px;padding:1.25rem;margin-top:1.25rem">
+      <div class="section-title" style="margin-bottom:1rem">İş Kuyruğu Durumu (Canlı)</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1rem">
+        <div style="background:#f4f4f6;border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:11px;color:#9ca3af">BEKLEYEN</div>
+          <div style="font-size:22px;font-weight:700;color:#1a1a2e">{{ jobStats.waiting }}</div>
+        </div>
+        <div style="background:#e0f2fe;border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:11px;color:#0369a1">ÇALIŞAN</div>
+          <div style="font-size:22px;font-weight:700;color:#0369a1">{{ jobStats.active }}</div>
+        </div>
+        <div style="background:#dcfce7;border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:11px;color:#15803d">TAMAMLANAN</div>
+          <div style="font-size:22px;font-weight:700;color:#15803d">{{ jobStats.completed }}</div>
+        </div>
+        <div style="background:#fee2e2;border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:11px;color:#dc2626">BAŞARISIZ</div>
+          <div style="font-size:22px;font-weight:700;color:#dc2626">{{ jobStats.failed }}</div>
+        </div>
+      </div>
+
+      <div v-if="jobStats.recentJobs.length > 0">
+        <div style="font-size:12px;color:#9ca3af;margin-bottom:8px">Son İşlemler</div>
+        <div v-for="job in jobStats.recentJobs" :key="job.id" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid #ebebeb;font-size:13px">
+          <span>{{ job.name }}</span>
+          <span :class="['stat-badge', job.status === 'completed' ? 'badge-green' : 'badge-red']" style="font-size:11px">
+            {{ job.status === 'completed' ? 'Tamamlandı' : 'Başarısız' }}
+          </span>
+        </div>
+      </div>
+      <div v-else class="empty-state" style="padding:1rem 0">Henüz işlem yok.</div>
+    </div>
   </AppLayout>
 </template>
-
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import AppLayout from '../components/AppLayout.vue';
 import api from '../api';
+import { connectSocket } from '../socket';
+import { useAuthStore } from '../stores/auth';
 
 const products = ref<any[]>([]);
 const orders = ref<any[]>([]);
@@ -138,6 +173,22 @@ const stats = computed(() => {
   const lowStockProducts = products.value.filter(p => p.quantity <= 5);
   return { total, outOfStock, lowStock, categories: Object.keys(byCategory).length, byCategory, lowStockProducts };
 });
+const jobStats = ref({
+  active: 0,
+  completed: 0,
+  failed: 0,
+  waiting: 0,
+  recentJobs: [] as any[],
+});
+
+const loadJobStats = async () => {
+  try {
+    const res = await api.get('/jobs/stats');
+    jobStats.value = res.data;
+  } catch {
+    // sessizce geç
+  }
+};
 
 const orderStats = computed(() => ({
   pending: orders.value.filter(o => o.status === 'pending').length,
@@ -165,5 +216,53 @@ onMounted(async () => {
   products.value = prodRes.data.products;
   orders.value = orderRes.data;
   financial.value = txRes.data.summary;
+
+  // Socket dinleyicileri
+  const authStore = useAuthStore();
+const socket = authStore.token ? connectSocket(authStore.token) : null;
+  if (socket) {
+
+    // Stok güncellenince
+    socket.on('stock:updated', (data) => {
+      const index = products.value.findIndex(p => p.id === data.productId);
+      if (index !== -1) {
+        products.value[index].quantity = data.quantity;
+      }
+    });
+
+    // Yeni ürün eklenince
+    socket.on('product:created', (product) => {
+      products.value.unshift(product);
+    });
+
+    // Ürün silinince
+    socket.on('product:deleted', (data) => {
+      products.value = products.value.filter(p => p.id !== data.id);
+    });
+
+    // Sipariş tamamlanınca
+    socket.on('order:completed', async () => {
+      const [orderRes, txRes] = await Promise.all([
+        api.get('/orders'),
+        api.get('/transactions')
+      ]);
+      orders.value = orderRes.data;
+      financial.value = txRes.data.summary;
+    });
+    await loadJobStats();
+
+// Socket ile job güncellemesi geldiğinde yenile
+if (socket) {
+  socket.on('job:update', () => {
+    loadJobStats();
+    // import bitince ürünleri de yenile
+    setTimeout(async () => {
+      const res = await api.get('/products');
+      products.value = res.data.products;
+      loadJobStats();
+    }, 3000);
+  });
+}
+  }
 });
 </script>

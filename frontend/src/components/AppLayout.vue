@@ -9,35 +9,38 @@
         <div class="logo-sub">Stok Takip Sistemi</div>
       </div>
 
-      <nav class="sidebar-nav">
-        <router-link to="/" class="nav-item" :class="{ active: route.path === '/' }">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-          Dashboard
-        </router-link>
-        <router-link to="/products" class="nav-item" :class="{ active: route.path === '/products' }">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-          Ürünler
-        </router-link>
-        <router-link to="/products/new" class="nav-item" :class="{ active: route.path === '/products/new' }">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-          Yeni Ürün
-        </router-link>
-        <router-link to="/orders" class="nav-item" :class="{ active: route.path === '/orders' }">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
-          Siparişler
-        </router-link>
-        <router-link to="/transactions" class="nav-item" :class="{ active: route.path === '/transactions' }">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          Finans
-        </router-link>
-        <router-link to="/charts" class="nav-item" :class="{ active: route.path === '/charts' }">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-          Grafikler
-        </router-link>
-      </nav>
+     <nav class="sidebar-nav">
+  <router-link to="/" class="nav-item" :class="{ active: route.path === '/' }">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </router-link>
+  <router-link to="/products" class="nav-item" :class="{ active: route.path === '/products' }">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+    Ürünler
+  </router-link>
+  <router-link to="/products/new" class="nav-item" :class="{ active: route.path === '/products/new' }">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    Yeni Ürün
+  </router-link>
+  <router-link to="/orders" class="nav-item" :class="{ active: route.path === '/orders' }">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+    Siparişler
+  </router-link>
+  <router-link to="/transactions" class="nav-item" :class="{ active: route.path === '/transactions' }">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    Finans
+  </router-link>
+  <router-link to="/charts" class="nav-item" :class="{ active: route.path === '/charts' }">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Grafikler
+  </router-link>
+  <router-link to="/import" class="nav-item" :class="{ active: route.path === '/import' }">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    İçe Aktar
+  </router-link>
+</nav>
 
       <div class="sidebar-footer">
-      
         <div class="nav-item" @click="handleLogout" style="cursor:pointer">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           Çıkış
@@ -48,17 +51,19 @@
     <div class="main-content">
       <div class="topbar">
         <div class="topbar-title">{{ pageTitle }}</div>
-        <<div class="topbar-right">
-  <router-link to="/profile">
-    <div class="avatar">{{ initials }}</div>
-  </router-link>
-</div>
+        <div class="topbar-right">
+          <router-link to="/profile">
+            <div class="avatar">{{ initials }}</div>
+          </router-link>
+        </div>
       </div>
 
       <div class="page-content">
         <slot />
       </div>
     </div>
+
+    <Toast />
   </div>
 </template>
 
@@ -82,11 +87,15 @@ const pageTitle = computed(() => {
   if (route.path === '/transactions') return 'Finans';
   if (route.path === '/charts') return 'Grafikler';
   if (route.path === '/profile') return 'Profil';
+  if (route.path === '/import') return 'İçe Aktar';
   return 'Inventory';
 });
 
-const initials = computed(() => 'ME');
-
+const initials = computed(() => {
+  const username = authStore.username;
+  if (!username) return 'ME';
+  return username.slice(0, 2).toUpperCase();
+});
 const handleLogout = () => {
   authStore.logout();
   router.push('/login');

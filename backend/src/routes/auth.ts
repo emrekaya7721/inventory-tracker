@@ -34,10 +34,10 @@ const result = await pool.query(
     const token = jwt.sign(
       { userId: result.rows[0].id },
       process.env.JWT_SECRET as string,
-      { expiresIn: '7d' }
+      { expiresIn: '1h' }
     );
 
-    res.status(201).json({ token });
+   res.status(201).json({ token, username });
   } catch {
     res.status(500).json({ error: 'Sunucu hatası' });
   }
@@ -70,7 +70,7 @@ router.post('/login', async (req: Request, res: Response) => {
       { expiresIn: '1h' }
     );
 
-    res.json({ token });
+   res.json({ token, username: user.username });
   } catch (err) {
   console.error(err);
   res.status(500).json({ error: 'Sunucu hatası' });

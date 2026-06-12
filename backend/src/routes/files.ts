@@ -71,6 +71,36 @@ router.get('/products/excel', async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: 'Excel oluşturulamadı' });
   }
 });
+router.get('/products/csv', async (req: AuthRequest, res: Response) => {
+  try {
+    const result = await pool.query(
+      'SELECT name, category, quantity, purchase_price, selling_price FROM products WHERE user_id = $1 ORDER BY created_at DESC',
+      [req.userId]
+    );
+
+    const headers = ['Urun Adi', 'Kategori', 'Stok', 'Alis Fiyati', 'Satis Fiyati'];
+    const rows = result.rows.map(p => [
+      p.name,
+      p.category,
+      p.quantity,
+      parseFloat(p.purchase_price),
+      parseFloat(p.selling_price),
+    ]);
+
+    const response = await axios.post(
+      `${FILE_SERVICE_URL}/generate/csv`,
+      { title: 'Urun_Listesi', headers, rows },
+      { responseType: 'arraybuffer' }
+    );
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="urunler.csv"');
+    res.send(response.data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'CSV oluşturulamadı' });
+  }
+});
 
 // Finansal rapor PDF
 router.get('/transactions/pdf', async (req: AuthRequest, res: Response) => {
@@ -93,6 +123,35 @@ router.get('/transactions/pdf', async (req: AuthRequest, res: Response) => {
       { title: 'Finansal Rapor', headers, rows },
       { responseType: 'stream' }
     );
+    router.get('/transactions/csv', async (req: AuthRequest, res: Response) => {
+  try {
+    const result = await pool.query(
+      'SELECT type, amount, description, created_at FROM transactions WHERE user_id = $1 ORDER BY created_at DESC',
+      [req.userId]
+    );
+
+    const headers = ['Tur', 'Tutar', 'Aciklama', 'Tarih'];
+    const rows = result.rows.map(t => [
+      t.type === 'income' ? 'Gelir' : 'Gider',
+      parseFloat(t.amount),
+      t.description || '',
+      new Date(t.created_at).toLocaleDateString('tr-TR'),
+    ]);
+
+    const response = await axios.post(
+      `${FILE_SERVICE_URL}/generate/csv`,
+      { title: 'Finans_Raporu', headers, rows },
+      { responseType: 'arraybuffer' }
+    );
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="finans.csv"');
+    res.send(response.data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'CSV oluşturulamadı' });
+  }
+});
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="finans.pdf"');

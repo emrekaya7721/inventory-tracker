@@ -68,7 +68,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 });
 
 // Sipariş tamamla
-router.patch('id/comple/:te', async (req: AuthRequest, res: Response) => {
+router.patch('/:id/complete', async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
 
   try {

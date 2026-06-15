@@ -34,4 +34,5 @@ router.post('/low-stock', async (req: AuthRequest, res: Response) => {
   }
 });
 
+
 export default router;

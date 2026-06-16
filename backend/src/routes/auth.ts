@@ -38,10 +38,10 @@ const result = await pool.query(
     );
 
    res.status(201).json({ token, username });
-  } catch {
-    res.status(500).json({ error: 'Sunucu hatası' });
-  }
-});
+  } catch (err) {
+  console.error('Register hatası:', err);
+  res.status(500).json({ error: 'Sunucu hatası' });
+}
 
 router.post('/login', async (req: Request, res: Response) => {
   const parsed = authSchema.safeParse(req.body);

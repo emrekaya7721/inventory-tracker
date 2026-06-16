@@ -34,7 +34,8 @@ kind: Ingress
 metadata:
   name: inventory-ingress
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    kubernetes.io/ingress.class: "traefik"
+    traefik.ingress.kubernetes.io/router.middlewares: default-strip-api@kubernetescrd
 spec:
   rules:
     - http:

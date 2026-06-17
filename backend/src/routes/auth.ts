@@ -27,26 +27,28 @@ router.post('/register', async (req: Request, res: Response) => {
     }
 
     const hashed = await bcrypt.hash(password, 10);
-const result = await pool.query(
-  'INSERT INTO users (username, password, email) VALUES ($1, $2, $3) RETURNING id',
-  [username, hashed, email || null]
-);
+    const result = await pool.query(
+      'INSERT INTO users (username, password, email) VALUES ($1, $2, $3) RETURNING id',
+      [username, hashed, email || null]
+    );
+
     const token = jwt.sign(
       { userId: result.rows[0].id },
       process.env.JWT_SECRET as string,
       { expiresIn: '1h' }
     );
 
-   res.status(201).json({ token, username });
+    res.status(201).json({ token, username });
   } catch (err) {
-  console.error('Register hatası:', err);
-  res.status(500).json({ error: 'Sunucu hatası' });
-}
+    console.error('Register hatası:', err);
+    res.status(500).json({ error: 'Sunucu hatası' });
+  }
+});
 
 router.post('/login', async (req: Request, res: Response) => {
   const parsed = authSchema.safeParse(req.body);
   if (!parsed.success) {
-   return res.status(400).json({ error: parsed.error.issues[0].message });
+    return res.status(400).json({ error: parsed.error.issues[0].message });
   }
 
   const { username, password } = parsed.data;
@@ -70,11 +72,11 @@ router.post('/login', async (req: Request, res: Response) => {
       { expiresIn: '1h' }
     );
 
-   res.json({ token, username: user.username });
+    res.json({ token, username: user.username });
   } catch (err) {
-  console.error(err);
-  res.status(500).json({ error: 'Sunucu hatası' });
-}
+    console.error(err);
+    res.status(500).json({ error: 'Sunucu hatası' });
+  }
 });
 
 export default router;
